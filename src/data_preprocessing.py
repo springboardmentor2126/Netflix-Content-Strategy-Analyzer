@@ -8,7 +8,6 @@ Milestone 1:
 - Normalize categorical features
 
 Milestone 2:
--Analyze Netflix content growth over time
 - Perform exploratory data analysis
 - Visualize trends
 - Generate insights
