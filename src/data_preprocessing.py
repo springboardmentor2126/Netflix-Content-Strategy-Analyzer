@@ -1,229 +1,95 @@
-"""
-Project: Netflix Content Strategy Analyzer – Insights into Global Streaming Trends
-
-Milestone 1:
-- Define project scope & success metrics
-- Load Netflix dataset
-- Clean dataset (handle missing values, remove duplicates)
-- Normalize categorical features
-
-Milestone 2:
-- Perform exploratory data analysis
-- Visualize trends
-- Generate insights
-
-Success Metrics:
-- Identify top genres
-- Identify top producing countries
-- Analyze rating distribution
-- Study yearly content growth trend
-"""
+# ==============================
+# Netflix Content Strategy Analyzer
+# ==============================
 
 import pandas as pd
-import numpy as np
-import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 
-# ==============================
-# 1. Define File Path
-# ==============================
+# ------------------------------
+# 1. Load Dataset
+# ------------------------------
+df = pd.read_csv("data/netflix_titles.csv")
 
-DATA_PATH = os.path.join("data", "netflix_titles.csv")
-OUTPUT_PATH = os.path.join("data", "netflix_cleaned.csv")
+print("Dataset Loaded Successfully!")
+print(df.head())
 
-# ==============================
-# 2. Load Dataset
-# ==============================
+# Create output folder for saving visualizations
+if not os.path.exists("outputs"):
+    os.makedirs("outputs")
 
-def load_dataset(path):
-    print("Loading dataset...")
-    df = pd.read_csv(path)
-    print("Dataset loaded successfully!")
-    return df
+# ------------------------------
+# 2. Data Cleaning
+# ------------------------------
 
-# ==============================
-# 3. Explore Data
-# ==============================
+# Remove duplicates
+df.drop_duplicates(inplace=True)
 
-def explore_data(df):
-    print("\nDataset Shape:", df.shape)
-    print("\nMissing Values:\n", df.isnull().sum())
-    print("\nDuplicate Rows:", df.duplicated().sum())
+# Fill missing values
+df.fillna("Unknown", inplace=True)
 
-# ==============================
-# 4. Clean Data (Milestone 1)
-# ==============================
+# Convert date_added to datetime
+df['date_added'] = pd.to_datetime(df['date_added'], errors='coerce')
 
-def clean_data(df):
-    print("\nCleaning data...")
+print("\nData Cleaning Completed!")
 
-    df = df.drop_duplicates()
+# ------------------------------
+# 3. Content Type Analysis
+# ------------------------------
 
-    df["director"] = df["director"].fillna("Unknown")
-    df["cast"] = df["cast"].fillna("Not Available")
-    df["country"] = df["country"].fillna("Unknown")
-    df["rating"] = df["rating"].fillna("Not Rated")
+plt.figure()
+sns.countplot(data=df, x='type')
+plt.title("Movies vs TV Shows on Netflix")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig("outputs/content_type.png")
+plt.close()
 
-    df["date_added"] = pd.to_datetime(df["date_added"], errors="coerce")
-    df = df.dropna(subset=["title"])
+# ------------------------------
+# 4. Top 10 Countries
+# ------------------------------
 
-    print("Cleaning completed.")
-    return df
+country_counts = df['country'].value_counts().head(10)
 
-# ==============================
-# 5. Normalize Features (Milestone 1)
-# ==============================
+plt.figure()
+country_counts.plot(kind='bar')
+plt.title("Top 10 Content Producing Countries")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig("outputs/top_countries.png")
+plt.close()
 
-def normalize_features(df):
-    print("\nNormalizing categorical features...")
+# ------------------------------
+# 5. Content Added Per Year
+# ------------------------------
 
-    df["listed_in"] = df["listed_in"].str.lower().str.strip()
-    df["country"] = df["country"].str.lower().str.strip()
-    df["rating"] = df["rating"].str.upper().str.strip()
+df['year_added'] = df['date_added'].dt.year
+year_counts = df['year_added'].value_counts().sort_index()
 
-    df["genre_list"] = df["listed_in"].str.split(",")
-    df["country_list"] = df["country"].str.split(",")
+plt.figure()
+year_counts.plot(kind='line')
+plt.title("Content Added Per Year")
+plt.tight_layout()
+plt.savefig("outputs/content_per_year.png")
+plt.close()
 
-    print("Normalization completed.")
-    return df
+# ------------------------------
+# 6. Top 10 Genres
+# ------------------------------
 
-# ==============================
-# 6. Feature Engineering (Milestone 2)
-# ==============================
+df['listed_in'] = df['listed_in'].str.split(',')
+all_genres = df.explode('listed_in')
 
-def feature_engineering(df):
-    print("\nCreating derived features...")
+genre_counts = all_genres['listed_in'].value_counts().head(10)
 
-    df["duration_int"] = df["duration"].str.extract(r"(\d+)").astype(float)
+plt.figure()
+genre_counts.plot(kind='bar')
+plt.title("Top 10 Genres on Netflix")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig("outputs/top_genres.png")
+plt.close()
 
-    df["content_length_category"] = np.where(
-        (df["type"] == "Movie") & (df["duration_int"] < 90),
-        "Short Movie",
-        np.where(
-            (df["type"] == "Movie") & (df["duration_int"] >= 90),
-            "Long Movie",
-            "TV Show"
-        )
-    )
-
-    df["original_vs_licensed"] = np.where(
-        df["director"].str.contains("Netflix", case=False, na=False),
-        "Netflix Original",
-        "Licensed"
-    )
-
-    print("Feature engineering completed.")
-    return df
-
-# ==============================
-# 7. EDA Visualizations (Milestone 2)
-# ==============================
-
-def analyze_content_growth(df):
-    print("\nAnalyzing content growth over time...")
-
-    df["year_added"] = df["date_added"].dt.year
-    yearly_growth = df["year_added"].value_counts().sort_index()
-
-    plt.figure(figsize=(10,5))
-    yearly_growth.plot(kind='line')
-    plt.title("Netflix Content Growth Over Time")
-    plt.xlabel("Year")
-    plt.ylabel("Number of Titles Added")
-    plt.tight_layout()
-    plt.show()
-
-def visualize_genre_distribution(df):
-    print("\nVisualizing genre distribution...")
-
-    genre_counts = df["listed_in"].value_counts().head(10)
-
-    plt.figure(figsize=(10,5))
-    genre_counts.plot(kind='bar')
-    plt.title("Top 10 Genres")
-    plt.xlabel("Genre")
-    plt.ylabel("Count")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
-
-def visualize_rating_distribution(df):
-    print("\nVisualizing rating distribution...")
-
-    plt.figure(figsize=(10,5))
-    sns.countplot(data=df, x="rating", order=df["rating"].value_counts().index)
-    plt.xticks(rotation=45)
-    plt.title("Rating Distribution")
-    plt.tight_layout()
-    plt.show()
-
-def visualize_content_type(df):
-    print("\nVisualizing content type distribution...")
-
-    df["type"].value_counts().plot(kind="pie", autopct='%1.1f%%')
-    plt.title("Movies vs TV Shows")
-    plt.ylabel("")
-    plt.tight_layout()
-    plt.show()
-
-def analyze_country_contribution(df):
-    print("\nAnalyzing country-level contributions...")
-
-    country_counts = df["country"].value_counts().head(10)
-
-    plt.figure(figsize=(10,5))
-    country_counts.plot(kind='bar')
-    plt.title("Top 10 Content Producing Countries")
-    plt.xlabel("Country")
-    plt.ylabel("Number of Titles")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
-
-# ==============================
-# 8. Save Cleaned Data
-# ==============================
-
-def save_cleaned_data(df):
-    df.to_csv(OUTPUT_PATH, index=False)
-    print(f"\nCleaned dataset saved at: {OUTPUT_PATH}")
-
-# ==============================
-# MAIN FUNCTION
-# ==============================
-
-def main():
-    print("Starting Netflix Data Analysis Project...\n")
-
-    df = load_dataset(DATA_PATH)
-    explore_data(df)
-
-    df = clean_data(df)
-    df = normalize_features(df)
-    df = feature_engineering(df)
-
-    save_cleaned_data(df)
-
-    analyze_content_growth(df)
-    visualize_genre_distribution(df)
-    visualize_rating_distribution(df)
-    visualize_content_type(df)
-    analyze_country_contribution(df)
-
-    print("\n📊 Key Insights:")
-    print("1. Movies dominate Netflix content compared to TV Shows.")
-    print("2. Certain countries contribute significantly more content.")
-    print("3. Drama and International genres are among the most common.")
-    print("4. Content production has increased rapidly after 2015.")
-    print("5. TV-MA and TV-14 are common rating categories.")
-
-    print("\nFinal Dataset Shape:", df.shape)
-    print("\nMilestone 1 & 2 Completed Successfully! 🎉")
-
-# ==============================
-# RUN SCRIPT
-# ==============================
-
-if __name__ == "__main__":
-    main()
+print("\nAll Visualizations Saved in 'outputs' folder!")
+print("Project Execution Completed Successfully!")
