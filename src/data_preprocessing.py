@@ -31,7 +31,6 @@ The project will be considered successful if:
    - Content Length Category
    - Original vs Licensed classification
 5. All visualizations are saved successfully in the outputs folder.
-6. The entire script runs without errors and produces reproducible results.
 """
 
 import pandas as pd
