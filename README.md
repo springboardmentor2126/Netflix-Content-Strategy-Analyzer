@@ -91,17 +91,5 @@ pip install -r requirements.txt
 streamlit run src/app.py
 ```
 
----
-
-## Learning Outcome
-Through this internship project, I learned:
-- Real-world dataset preprocessing
-- Exploratory Data Analysis
-- Streamlit dashboard development
-- Building recommendation-style features
-- Git branch workflow
-- Milestone-based development
-- Project documentation
-
 
 [def]: screenshots/overview-1.png
